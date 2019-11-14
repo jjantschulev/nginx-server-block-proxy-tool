@@ -1,0 +1,15 @@
+{
+    "name": "nginx-server-block-proxy-tool",
+    "version": "1.0.0",
+    "main": "./bin/index.js",
+    "repository": "git@github.com:kraken22/nginx-server-block-proxy-tool.git",
+    "author": "Jordan Jantschulev <j.jantschulev@gmail.com>",
+    "license": "MIT",
+    "bin": {
+        "server-blocks": "./bin/index.js"
+    },
+    "dependencies": {
+        "commander": "^4.0.1",
+        "inquirer": "^7.0.0"
+    }
+}
