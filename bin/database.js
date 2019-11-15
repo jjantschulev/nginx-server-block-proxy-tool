@@ -15,7 +15,7 @@ function loadData() {
 function saveData() {
     fs.writeFileSync(DATA_PATH, JSON.stringify(data), { encoding: "utf-8" });
     console.log(highlight("Success! Data saved."));
-    updateNginxConfig();
+    updateNginxConfig(data);
     console.log(highlight("Nginx server restarted."));
 }
 
