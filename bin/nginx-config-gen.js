@@ -19,13 +19,13 @@ function generateServerBlockString(block) {
 }
 
 function updateNginxConfig(data) {
-    if (!fs.existsSync("/etc/nginx/sites-avaliable/"))
+    if (!fs.existsSync("/etc/nginx/sites-available"))
         throw "Nginx not installed correctly";
 
     data.forEach(block => {
         const str = generateServerBlockString(block);
         // Save the configuration
-        const p = path.join("/etc/nginx/sites-avaliable", block.domain);
+        const p = path.join("/etc/nginx/sites-available", block.domain);
         fs.writeFileSync(p, str, { encoding: "utf-8" });
         // Enable this block
         const symPath = path.join("/etc/nginx/sites-enabled", block.domain);
