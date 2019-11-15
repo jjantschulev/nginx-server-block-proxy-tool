@@ -1,6 +1,5 @@
 const fs = require("fs");
-const path = require("path");
-const DATA_PATH = path.join(__dirname, "../data.json");
+const DATA_PATH = "~/.nginx-server-block-proxy-tool-data.json";
 const data = loadData();
 const { updateNginxConfig } = require("./nginx-config-gen");
 
@@ -34,11 +33,6 @@ function dbInsert(ob) {
     if (data.find(e => e.domain === domain)) {
         return console.log(
             "Error. Application with that (sub)domain already exists.\n Please use the edit command"
-        );
-    }
-    if (data.find(e => e.port === port)) {
-        return console.log(
-            "Error. Application with that port already exists.\n Please choose a different port"
         );
     }
     data.push({ name, domain, port });
@@ -78,9 +72,11 @@ function print() {
         { name: 4, domain: 6, port: 4 }
     );
     const titles = {
-        name: "Name",
-        domain: "Domain",
-        port: "Port"
+        name: "name",
+        domain: "domain",
+        port: "port",
+        enabled: "enabled",
+        https: "https"
     };
     [titles, ...data].forEach((el, i) => {
         let str = "";
