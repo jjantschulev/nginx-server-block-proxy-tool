@@ -1,9 +1,20 @@
 const fs = require("fs");
-const DATA_PATH = "~/.nginx-server-block-proxy-tool-data.json";
+const path = require("path");
+const DATA_PATH = "/etc/nginx-server-block-proxy-tool/data.json";
 const data = loadData();
 const { updateNginxConfig } = require("./nginx-config-gen");
 
+function ensureDirectoryExistence(filePath) {
+    var dirname = path.dirname(filePath);
+    if (fs.existsSync(dirname)) {
+        return true;
+    }
+    ensureDirectoryExistence(dirname);
+    fs.mkdirSync(dirname);
+}
+
 function loadData() {
+    ensureDirectoryExistence(DATA_PATH);
     if (fs.existsSync(DATA_PATH)) {
         const fileContent = fs.readFileSync(DATA_PATH, { encoding: "utf-8" });
         return JSON.parse(fileContent);
@@ -12,6 +23,7 @@ function loadData() {
 }
 
 function saveData() {
+    ensureDirectoryExistence(DATA_PATH);
     fs.writeFileSync(DATA_PATH, JSON.stringify(data), { encoding: "utf-8" });
     console.log(highlight("Success! Data saved."));
     updateNginxConfig(data);
@@ -74,9 +86,7 @@ function print() {
     const titles = {
         name: "name",
         domain: "domain",
-        port: "port",
-        enabled: "enabled",
-        https: "https"
+        port: "port"
     };
     [titles, ...data].forEach((el, i) => {
         let str = "";
