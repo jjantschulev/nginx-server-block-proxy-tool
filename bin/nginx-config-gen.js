@@ -23,8 +23,8 @@ function updateNginxConfig(data) {
         throw "Nginx not installed correctly";
 
     // Clean Up
-    execSync("sudo rm /etc/nginx/sites-available/*.nsbpt");
-    execSync("sudo rm /etc/nginx/sites-enabled/*.nsbpt");
+    execSync("sudo rm -f /etc/nginx/sites-available/*.nsbpt");
+    execSync("sudo rm -f /etc/nginx/sites-enabled/*.nsbpt");
 
     data.forEach(block => {
         const str = generateServerBlockString(block);
