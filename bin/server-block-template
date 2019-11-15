@@ -1,0 +1,13 @@
+# Managed By nginx-server-block-procy-tool. 
+# All Edits will be overwritten.
+
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name @1;
+
+    location / {
+        proxy_pass http://localhost:@2;
+    }
+}

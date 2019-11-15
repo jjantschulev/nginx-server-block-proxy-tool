@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const DATA_PATH = path.join(__dirname, "../data.json");
 const data = loadData();
+const { updateNginxConfig } = require("./nginx-config-gen");
 
 function loadData() {
     if (fs.existsSync(DATA_PATH)) {
@@ -14,6 +15,8 @@ function loadData() {
 function saveData() {
     fs.writeFileSync(DATA_PATH, JSON.stringify(data), { encoding: "utf-8" });
     console.log(highlight("Success! Data saved."));
+    updateNginxConfig();
+    console.log(highlight("Nginx server restarted."));
 }
 
 function dbInsert(ob) {

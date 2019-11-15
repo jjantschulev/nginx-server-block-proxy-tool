@@ -3,6 +3,7 @@
 const program = require("commander");
 const { prompt } = require("inquirer");
 const { dbInsert, dbUpdate, dbDelete, print } = require("./database");
+const { generateServerBlockString } = require("./nginx-config-gen");
 
 program
     .version("0.0.1")
@@ -49,5 +50,18 @@ program
     .action(() => {
         print();
     });
+
+program.command("test").action(() => {
+    const data = [
+        { name: "auth", domain: "auth.ausjan.com", port: 3001 },
+        { name: "markdown", domain: "markdown.ausjan.com", port: 3002 },
+        { name: "photos", domain: "photos.ausjan.com", port: 3003 }
+    ];
+    data.forEach(block => {
+        console.log(generateServerBlockString(block));
+
+        console.log("==================================================");
+    });
+});
 
 program.parse(process.argv);
