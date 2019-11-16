@@ -5,9 +5,27 @@ server {
     listen 80;
     listen [::]:80;
 
+#1  listen 443;
+#1  listen [::]:443;
+
+    root /var/www/html;
+    index index.html index.htm index.nginx-debian.html;
+
     server_name @1;
+
+#1  ssl on;
+#1  ssl_certificate /usr/local/share/ca-certificates/@1/server.pem;
+#1  ssl_certificate_key /usr/local/share/ca-certificates/@1/server.key;
+#1  ssl_session_cache shared:SSL:10m;
 
     location / {
         proxy_pass http://localhost:@2;
+        proxy_set_header Host $host;
+
+#1      proxy_redirect http:// https://;
+    }
+
+    location /.well-known/ {
+        try_files $uri $uri/ =404;
     }
 }

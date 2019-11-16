@@ -5,17 +5,25 @@ const { execSync } = require("child_process");
 const TEMPLATE_PATH = path.join(__dirname, "server-block-template");
 const template = fs.readFileSync(TEMPLATE_PATH, "utf-8");
 
-function replacePlaceholdersWithValues(values) {
+function replacePlaceholdersWithValues(values, flags) {
     let str = template.slice(0);
     for (let i = 0; i < values.length; i++) {
-        str = str.replace(`@${i + 1}`, values[i]);
+        const regex = new RegExp(`@${i + 1}`, "g");
+        str = str.replace(regex, values[i]);
+    }
+    for (let i = 0; i < flags.length; i++) {
+        if (flags[i]) {
+            const regex = new RegExp(`#${i + 1}`, "g");
+            str = str.replace(regex, "  ");
+        }
     }
     return str;
 }
 
 function generateServerBlockString(block) {
     const values = [block.domain, block.port];
-    return replacePlaceholdersWithValues(values);
+    const flags = [block.https];
+    return replacePlaceholdersWithValues(values, flags);
 }
 
 function updateNginxConfig(data) {
@@ -43,7 +51,10 @@ function updateNginxConfig(data) {
     });
 
     // Restart Nginx Webserver
-    execSync("sudo systemctl restart nginx");
+    execSync("sudo systemctl reload nginx");
+
+    // generate certificates for new domains
+    // execSync("sudo certbot certonly ");
 }
 
 module.exports = { updateNginxConfig, generateServerBlockString };
