@@ -1,8 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const DATA_PATH = "/etc/nginx-server-block-proxy-tool/data.json";
-const data = loadData();
 const { updateNginxConfig } = require("./nginx-config-gen");
+const { highlight } = require("./highlight");
+const columns = ["name", "domain", "port", "https", "enabled", "email", "hsts"]
+const defaultBlock = { https: "false", enabled: "true", email: "j.jantschulev@gmail.com", hsts: "false" }
+const data = loadData();
 
 function ensureDirectoryExistence(filePath) {
     var dirname = path.dirname(filePath);
@@ -14,10 +17,11 @@ function ensureDirectoryExistence(filePath) {
 }
 
 function loadData() {
+
     ensureDirectoryExistence(DATA_PATH);
     if (fs.existsSync(DATA_PATH)) {
         const fileContent = fs.readFileSync(DATA_PATH, { encoding: "utf-8" });
-        return JSON.parse(fileContent);
+        return JSON.parse(fileContent).map(b => ({ ...defaultBlock, ...b }));
     }
     return [];
 }
@@ -27,71 +31,66 @@ function saveData() {
     fs.writeFileSync(DATA_PATH, JSON.stringify(data), { encoding: "utf-8" });
     console.log(highlight("Success! Data saved."));
     updateNginxConfig(data);
-    console.log(highlight("Nginx server restarted."));
 }
 
-function dbInsert(ob) {
-    const name = ob.name;
-    const domain = ob.domain;
-    const port = parseInt(ob.port, 10);
-    if (port < 1024 || port > 65536) {
+function dbInsert(block) {
+    if (block.port < 1024 || block.port > 65536 || isNaN(block.port)) {
         return console.log("Error, port must be > 1024 and < 65536");
     }
-    if (data.find(e => e.name === name)) {
+    if (data.find(e => e.name === block.name)) {
         return console.log(
             "Error. Application with that name already exists.\n Please use the edit command"
         );
     }
-    if (data.find(e => e.domain === domain)) {
+    if (data.find(e => e.domain === block.domain)) {
         return console.log(
             "Error. Application with that (sub)domain already exists.\n Please use the edit command"
         );
     }
-    data.push({ name, domain, port });
+    data.push({ ...defaultBlock, ...block });
     saveData();
 }
 
 function dbUpdate(name, key, value) {
     if (!data.find(e => e.name === name))
         return console.log("Name does not exist");
-    if (!["domain", "port"].includes(key))
-        return console.log("Error: key must be 'domain' or 'port'");
+    if (!columns.includes(key))
+        return console.log(`Error: key must be either ${columns.join(" or ")}`);
     if (key === "port") value = parseInt(value, 10);
     if (key === "port" && (value < 1024 || value > 65536))
         return console.log("Error, port must be > 1024 and < 65536");
+
     data.find(e => e.name === name)[key] = value;
     saveData();
 }
 
 function dbDelete(name) {
-    const index = data.find(e => e.name === name);
-    if (!index === -1) return console.log("Name does not exist");
+    const index = data.findIndex(e => e.name === name);
+    if (index === -1) return console.log("Name does not exist");
     data.splice(index, 1);
     saveData();
 }
 
 function print() {
+    const titles = columns.reduce((p, c) => ({ ...p, [c]: c }), {});
     const longest = data.reduce(
         (prev, curr) => {
             const newLongest = { ...prev };
             for (let k in prev) {
-                if (curr[k].length > prev[k]) {
-                    newLongest[k] = curr[k].length;
+                if (curr[k]) {
+                    if (curr[k].toString().length > prev[k].length) {
+                        newLongest[k] = curr[k].toString();
+                    }
                 }
             }
             return newLongest;
         },
-        { name: 4, domain: 6, port: 4 }
+        { ...titles }
     );
-    const titles = {
-        name: "name",
-        domain: "domain",
-        port: "port"
-    };
     [titles, ...data].forEach((el, i) => {
         let str = "";
-        for (let k in el) {
-            const padding = longest[k] - el[k].length + 3;
+        for (let k in titles) {
+            const padding = longest[k].length - el[k].toString().length + 3;
             str += el[k] + " ".repeat(padding);
         }
         if (i === 0) str = highlight(str);
@@ -99,8 +98,8 @@ function print() {
     });
 }
 
-function highlight(text) {
-    return `\x1b[36m${text}\x1b[0m`;
+function getData() {
+    return data;
 }
 
-module.exports = { dbInsert, saveData, loadData, dbUpdate, dbDelete, print };
+module.exports = { dbInsert, saveData, loadData, dbUpdate, dbDelete, print, columns, getData };

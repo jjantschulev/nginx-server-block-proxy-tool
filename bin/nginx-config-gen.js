@@ -1,9 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
-
+const { createCert } = require("./https");
 const TEMPLATE_PATH = path.join(__dirname, "server-block-template");
 const template = fs.readFileSync(TEMPLATE_PATH, "utf-8");
+const { highlight } = require("./highlight");
 
 function replacePlaceholdersWithValues(values, flags) {
     let str = template.slice(0);
@@ -22,7 +23,7 @@ function replacePlaceholdersWithValues(values, flags) {
 
 function generateServerBlockString(block) {
     const values = [block.domain, block.port];
-    const flags = [block.https];
+    const flags = [block.https === 'true', block.hsts === 'true'];
     return replacePlaceholdersWithValues(values, flags);
 }
 
@@ -34,7 +35,11 @@ function updateNginxConfig(data) {
     execSync("sudo rm -f /etc/nginx/sites-available/*.nsbpt");
     execSync("sudo rm -f /etc/nginx/sites-enabled/*.nsbpt");
 
-    data.forEach(block => {
+    data.filter(block => block.enabled === 'true').forEach(block => {
+        if (block.https === 'true') {
+            // Generate Cert
+            createCert(block.domain, block.email);
+        }
         const str = generateServerBlockString(block);
         // Save the configuration
         const p = path.join(
@@ -51,10 +56,8 @@ function updateNginxConfig(data) {
     });
 
     // Restart Nginx Webserver
-    execSync("sudo systemctl reload nginx");
-
-    // generate certificates for new domains
-    // execSync("sudo certbot certonly ");
+    execSync("sudo systemctl restart nginx");
+    console.log(highlight("Nginx server restarted."));
 }
 
 module.exports = { updateNginxConfig, generateServerBlockString };

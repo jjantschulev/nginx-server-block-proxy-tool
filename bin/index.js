@@ -2,8 +2,10 @@
 
 const program = require("commander");
 const { prompt } = require("inquirer");
-const { dbInsert, dbUpdate, dbDelete, print } = require("./database");
-const { generateServerBlockString } = require("./nginx-config-gen");
+const { dbInsert, dbUpdate, dbDelete, print, getData } = require("./database");
+const { updateNginxConfig } = require("./nginx-config-gen");
+const { getCerts } = require("./https");
+
 
 program
     .version("0.0.1")
@@ -16,7 +18,7 @@ const newQuestions = [
         name: "domain",
         message: "Enter (sub)domain for server block: "
     },
-    { type: "input", name: "port", message: "Enter node.js server port: " }
+    { type: "number", name: "port", message: "Enter node.js server port: " }
 ];
 
 program
@@ -46,22 +48,25 @@ program
 
 program
     .command("list")
-    .description("Show all configurations")
+    .description("Show all server blocks")
     .action(() => {
         print();
     });
 
-program.command("test").action(() => {
-    const data = [
-        { name: "auth", domain: "auth.ausjan.com", port: 3001 },
-        { name: "markdown", domain: "markdown.ausjan.com", port: 3002 },
-        { name: "photos", domain: "photos.ausjan.com", port: 3003 }
-    ];
-    data.forEach(block => {
-        console.log(generateServerBlockString(block));
 
-        console.log("==================================================");
-    });
-});
+program.command("list-certs").description("Lists all installed letencrypt certificates").action(() => {
+    getCerts();
+})
+
+program.command("delete-cert").action(() => {
+    console.log("Please run\n\n    sudo certbot delete\n\nand select the domain you want to delete.")
+})
+
+program.command("update").description("Updates the nginx configuration files and reloads the server.").action(() => {
+    updateNginxConfig(getData());
+})
+
+
+
 
 program.parse(process.argv);

@@ -1,5 +1,6 @@
 # Managed By nginx-server-block-proxy-tool. 
 # All Edits will be overwritten.
+# Remove the .nsbpt from the file extension to customise the file.
 
 server {
     listen 80;
@@ -8,24 +9,55 @@ server {
 #1  listen 443;
 #1  listen [::]:443;
 
-    root /var/www/html;
-    index index.html index.htm index.nginx-debian.html;
-
     server_name @1;
 
+#1  if ($https = "") {
+#1      return 301 https://$host$request_uri;
+#1  }
+
 #1  ssl on;
-#1  ssl_certificate /usr/local/share/ca-certificates/@1/server.pem;
-#1  ssl_certificate_key /usr/local/share/ca-certificates/@1/server.key;
-#1  ssl_session_cache shared:SSL:10m;
+#1  ssl_certificate /etc/letsencrypt/live/@1/fullchain.pem;
+#1  ssl_certificate_key /etc/letsencrypt/live/@1/privkey.pem;
+
+#1	# Improve HTTPS performance with session resumption
+#1	ssl_session_cache shared:SSL:10m;
+#1	ssl_session_timeout 10m;
+
+#1	# Enable server-side protection against BEAST attacks
+#1	ssl_protocols TLSv1.2;
+#1	ssl_prefer_server_ciphers on;
+#1	ssl_ciphers "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384";
+
+#2  # Aditional Security Headers
+#2  # ref: https://developer.mozilla.org/en-US/docs/Security/HTTP_Strict_Transport_Security
+#2  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+
+#1  # ref: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
+#1  add_header X-Frame-Options DENY always;
+
+#1  # ref: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+#1  add_header X-Content-Type-Options nosniff always;
+
+#1  # ref: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection
+#1  add_header X-Xss-Protection "1; mode=block" always;
+
+#1  # Enable OCSP stapling 
+#1  # ref. http://blog.mozilla.org/security/2013/07/29/ocsp-stapling-in-firefox
+#1  ssl_stapling on;
+#1  ssl_stapling_verify on;
+#1  ssl_trusted_certificate /etc/letsencrypt/live/@1/fullchain.pem;
 
     location / {
         proxy_pass http://localhost:@2;
         proxy_set_header Host $host;
-
-#1      proxy_redirect http:// https://;
     }
 
-    location /.well-known/ {
-        try_files $uri $uri/ =404;
+    location ^~ /.well-known/acme-challenge/ {
+        default_type "text/plain";
+        root /var/www/letsencrypt;
+    }
+
+    location = /.well-known/acme-challenge/ {
+        return 404;
     }
 }
